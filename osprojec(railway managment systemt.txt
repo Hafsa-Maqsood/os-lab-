@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# Data files
+TRAINS_FILE="trains.txt"
+BOOKINGS_FILE="bookings.txt"
+
+# Admin credentials
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="password123"
+
+# Create files if they don't exist
+touch $TRAINS_FILE $BOOKINGS_FILE
+
+# Function: Admin Login
+admin_login() {
+    read -p "Enter Admin Username: " username
+    read -s -p "Enter Admin Password: " password
+    echo
+    if [[ $username == $ADMIN_USERNAME && $password == $ADMIN_PASSWORD ]]; then
+        echo "Login successful!"
+        admin_menu
+    else
+        echo "Invalid credentials!"
+    fi
+}
+
+# Function: Admin Module
+admin_menu() {
+    while true; do
+        echo "=== Admin Menu ==="
+        echo "1. Add Train"
+        echo "2. Remove Train"
+        echo "3. Update Train"
+        echo "4. View All Bookings"
+        echo "5. Exit"
+        read -p "Choose an option: " choice
+
+        case $choice in
+            1) add_train ;;
+            2) remove_train ;;
+            3) update_train ;;
+            4) view_bookings ;;
+            5) break ;;
+            *) echo "Invalid option!" ;;
+        esac
+    done
+}
+
+add_train() {
+    read -p "Enter Train Number: " train_no
+    read -p "Enter Route: " route
+    read -p "Enter Timing: " timing
+    read -p "Enter Fare: " fare
+    echo "$train_no|$route|$timing|$fare" >> $TRAINS_FILE
+    echo "Train added successfully!"
+}
+
+remove_train() {
+    read -p "Enter Train Number to remove: " train_no
+    # Check if the train exists
+    if grep -q "^$train_no|" $TRAINS_FILE; then
+        sed -i "/^$train_no|/d" $TRAINS_FILE
+        echo "Train removed successfully!"
+    else
+        echo "Train number $train_no not found!"
+    fi
+}
+
+update_train() {
+    read -p "Enter Train Number to update: " train_no
+    # Check if the train exists
+    if grep -q "^$train_no|" $TRAINS_FILE; then
+        sed -i "/^$train_no|/d" $TRAINS_FILE
+        echo "Enter new details for the train:"
+        add_train
+        echo "Train updated successfully!"
+    else
+        echo "Train number $train_no not found!"
+    fi
+}
+}
+
+view_bookings() {
+    echo "=== All Bookings ==="
+    cat $BOOKINGS_FILE
+}
+
+# Function: User Module
+user_menu() {
+    while true; do
+        echo "=== User Menu ==="
+        echo "1. Search Train"
+        echo "2. Book Ticket"
+        echo "3. Cancel Ticket"
+        echo "4. Exit"
+        read -p "Choose an option: " choice
+
+        case $choice in
+            1) search_train ;;
+            2) book_ticket ;;
+            3) cancel_ticket ;;
+            4) break ;;
+            *) echo "Invalid option!" ;;
+      esac
+    done
+}
+
+search_train() {
+    read -p "Enter Route or Timing to search: " query
+    grep -i "$query" $TRAINS_FILE || echo "No trains found!"
+}
+book_ticket() {
+    read -p "Enter Train Number: " train_no
+
+    # Check if the train exists
+    train_details=$(grep "^$train_no|" $TRAINS_FILE)
+    if [[ -z $train_details ]]; then
+        echo "Train number $train_no not found!"
+        return
+    fi
+
+
+    # Extract train details
+    route=$(echo "$train_details" | cut -d'|' -f2)
+    route=$(echo "$train_details" | cut -d'|' -f2)
+    timing=$(echo "$train_details" | cut -d'|' -f3)
+    fare=$(echo "$train_details" | cut -d'|' -f4)
+
+    echo "Train Details: Route=$route, Timing=$timing, Fare per person=$fare"
+
+    read -p "Enter Passenger Name: " name
+    read -p "Enter Total Persons: " total_persons
+
+    # Calculate total price
+    total_price=$((fare * total_persons))
+
+    # Save booking details
+    echo "$train_no|$name|$total_persons|$route|$timing|Total Fare=$total_price" >> $BOOKINGS_FILE
+
+    echo "Ticket booked successfully!"
+    echo "Booking Summary:"
+    echo "Train Number: $train_no"
+    echo "Passenger Name: $name"
+    echo "Total Persons: $total_persons"
+    echo "Route: $route"
+    echo "Timing: $timing"
+    echo "Total Fare: $total_price"
+}cancel_ticket() {
+    read -p "Enter Train Number: " train_no
+    read -p "Enter Passenger Name: " name
+    sed -i "/^$train_no|$name$/d" $BOOKINGS_FILE
+    echo "Ticket canceled successfully!"
+}
+
+# Function: Staff Module
+staff_menu() {
+    while true; do
+        echo "=== Staff Menu ==="
+        echo "1. View Train Schedules"
+        echo "2. Access Passenger List"
+        echo "3. Exit"
+        read -p "Choose an option: " choice
+
+        case $choice in
+            1) view_schedules ;;
+           2) view_passenger_list ;;
+           3) break ;;
+            *) echo "Invalid option!" ;;
+        esac
+    done
+}
+
+view_schedules() {
+    echo "=== Train Schedules ==="
+    cat $TRAINS_FILE
+}
+
+
+
+view_passenger_list() {
+    read -p "Enter Train Number: " train_no
+    grep "^$train_no|" $BOOKINGS_FILE || echo "No passengers found!"
+}
+
+# Main Menu
+main_menu() {
+    while true; do
+        echo "=== Railway Management System ==="
+        echo "1. Admin"
+        echo "2. User"
+        echo "3. Staff"
+        echo "4. Exit"
+        read -p "Choose a module: " module
+ case $module in
+            1) admin_login ;;
+            2) user_menu ;;
+            3) staff_menu ;;
+            4) exit ;;
+            *) echo "Invalid module!" ;;
+        esac
+    done
+}
+
+# Start the program
+main_menu
+
+
